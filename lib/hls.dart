@@ -13,7 +13,16 @@ class Hls {
   external factory Hls(HlsConfig config);
 
   @JS()
+  external void startLoad();
+
+  @JS()
   external void stopLoad();
+
+  @JS()
+  external void recoverMediaError();
+
+  @JS()
+  external void destroy();
 
   @JS()
   external void loadSource(String videoSrc);
@@ -33,7 +42,14 @@ class HlsConfig {
   @JS()
   external Function get xhrSetup;
 
-  external factory HlsConfig({Function xhrSetup});
+  external factory HlsConfig({
+    Function xhrSetup,
+    bool debug,
+    int appendErrorMaxRetry,
+    String defaultAudioCodec,
+    int initialLiveManifestSize,
+    bool liveDurationInfinity,
+  });
 }
 
 class ErrorData {

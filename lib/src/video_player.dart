@@ -72,7 +72,7 @@ class VideoPlayer {
   Future<void> initialize() async {
     _videoElement
       ..autoplay = false
-      ..controls = false;
+      ..controls = true;
 
     // Allows Safari iOS to play the video inline
     _videoElement.setAttribute('playsinline', 'true');
@@ -100,12 +100,13 @@ class VideoPlayer {
                 });
               },
             ),
+            debug: true,
+            appendErrorMaxRetry: 15,
+            defaultAudioCodec: 'mp4a.40.5',
+            initialLiveManifestSize: 3,
+            liveDurationInfinity: true,
           ),
         );
-        _hls!.attachMedia(_videoElement);
-        _hls!.on('hlsMediaAttached', allowInterop((dynamic _, dynamic __) {
-          _hls!.loadSource(uri.toString());
-        }));
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
           final ErrorData _data = ErrorData(data);
           if (_data.fatal) {
@@ -114,8 +115,11 @@ class VideoPlayer {
               message: _data.type,
               details: _data.details,
             ));
+            _hls!.recoverMediaError();
           }
         }));
+        _hls!.loadSource(uri.toString());
+        _hls!.attachMedia(_videoElement);
         _videoElement.onCanPlay.listen((dynamic _) {
           if (!_isInitialized) {
             _isInitialized = true;
@@ -255,7 +259,7 @@ class VideoPlayer {
   /// Disposes of the current [html.VideoElement].
   void dispose() {
     _videoElement.removeAttribute('src');
-    _videoElement.load();
+    // _videoElement.load();
     _hls?.stopLoad();
   }
 
@@ -316,20 +320,9 @@ class VideoPlayer {
     return durationRange;
   }
 
-  bool canPlayHlsNatively() {
-    bool canPlayHls = false;
-    try {
-      final String canPlayType = _videoElement.canPlayType('application/vnd.apple.mpegurl');
-      canPlayHls =
-          canPlayType != '';
-    } catch (e) {}
-    return canPlayHls;
-  }
-
   Future<bool> shouldUseHlsLibrary() async {
     return isSupported() &&
-        (uri.toString().contains('m3u8') || await _testIfM3u8()) &&
-        !canPlayHlsNatively();
+        (uri.toString().contains('m3u8') || await _testIfM3u8());
   }
 
   Future<bool> _testIfM3u8() async {
